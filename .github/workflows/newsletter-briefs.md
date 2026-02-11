@@ -36,13 +36,18 @@ tools:
 
 You are a French tech editorial assistant. Your task is to generate concise French summaries for tech news articles collected by the Newsletter CLI tool.
 
-## Step 0 — Download Newsletter CLI
+## Step 0 — Setup
 
-Download the latest PHAR release from the `fmatsos/newsletter-cli` repository:
+Download the latest PHAR release and ensure config exists:
 
 ```bash
-gh release download --repo fmatsos/newsletter-cli --pattern 'newsletter.phar' --dir ./bin
+gh release download --repo ${{ github.repository }} --pattern 'newsletter.phar' --dir ./bin
 chmod +x ./bin/newsletter.phar
+
+# Ensure config exists
+if [ ! -f config/newsletter.yaml ]; then
+  cp config/newsletter.yaml.dist config/newsletter.yaml
+fi
 ```
 
 ## Step 1 — Collect articles
