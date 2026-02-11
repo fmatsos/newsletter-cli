@@ -5,31 +5,32 @@ description: |
   for each article using AI, then builds and publishes the newsletter with generated briefs.
 
 on:
-  schedule: weekdays
+  schedule:
+    - cron: "0 8 * * 1-5"
   workflow_dispatch:
 
 engine:
+  id: copilot
   model: gpt-4.1
 
 timeout-minutes: 15
 
 permissions:
-  contents: read
-  discussions: write
-  issues: write
-  models: read
+  contents: "read"
+  discussions: "read"
+  issues: "read"
+  models: "read"
+  pull-requests: "read"
 
-network: defaults
+network: "defaults"
 
 safe-outputs:
   create-discussion:
-    title-prefix: "newsletter-briefs"
-    category: "General"
-    max: 1
+    category: "newsletters"
+    expires: false
 
 tools:
   bash: true
-
 ---
 
 # Newsletter Brief Generation
