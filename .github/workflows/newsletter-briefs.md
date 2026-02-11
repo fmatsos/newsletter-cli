@@ -37,12 +37,16 @@ tools:
 
 You are a French tech editorial assistant. Your task is to generate concise French summaries for tech news articles collected by the Newsletter CLI tool.
 
-## Step 0 — Download Newsletter CLI
+## Step 0 — Download Newsletter CLI (authenticated)
 
-Download the latest PHAR release from the `fmatsos/newsletter-cli` repository:
+Download the latest PHAR release from the `fmatsos/newsletter-cli` repository using the provided `$GITHUB_TOKEN` (gh CLI is unavailable):
 
 ```bash
-gh release download --repo fmatsos/newsletter-cli --pattern 'newsletter.phar' --dir ./bin
+mkdir -p ./bin
+curl -L --fail \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -o ./bin/newsletter.phar \
+  https://github.com/fmatsos/newsletter-cli/releases/latest/download/newsletter.phar
 chmod +x ./bin/newsletter.phar
 ```
 
@@ -100,7 +104,7 @@ php ./bin/newsletter.phar newsletter:build \
   --config=config/newsletter.yaml \
   --templates=templates \
   --repository=${{ github.repository }} \
-  --discussion-category=General \
+  --discussion-category=newsletters \
   --import-briefs=briefs.json \
   --archive-dir=newsletters \
   --output=newsletter-output.html \
@@ -115,6 +119,6 @@ If the newsletter was built successfully, commit the archived newsletter:
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 git add newsletters/
-git diff --cached --quiet || git commit -m "📰 Archive newsletter $(date +%Y-%m-%d)"
+git diff --cached --quiet || git commit -m "Archive newsletter $(date +%Y-%m-%d)"
 git push
 ```
