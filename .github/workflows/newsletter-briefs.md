@@ -3,6 +3,10 @@ description: |
   Generate newsletter article briefs using GitHub Copilot.
   Collects articles from RSS/Atom feeds via Newsletter CLI, generates French summaries
   for each article using AI, then builds and publishes the newsletter with generated briefs.
+  
+  NOTE: This workflow is a template/model designed to be copied to other repositories.
+  It downloads the newsletter.phar from fmatsos/newsletter-cli (hardcoded) so that
+  other repositories can use the tool without building it themselves.
 
 on:
   schedule: weekdays
@@ -38,10 +42,10 @@ You are a French tech editorial assistant. Your task is to generate concise Fren
 
 ## Step 0 — Setup
 
-Download the latest PHAR release and ensure config exists:
+Download the latest PHAR release from the newsletter-cli repository and ensure config exists:
 
 ```bash
-gh release download --repo ${{ github.repository }} --pattern 'newsletter.phar' --dir ./bin
+gh release download --repo fmatsos/newsletter-cli --pattern 'newsletter.phar' --dir ./bin
 chmod +x ./bin/newsletter.phar
 
 # Ensure config exists
