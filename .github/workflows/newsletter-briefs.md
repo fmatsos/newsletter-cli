@@ -22,7 +22,10 @@ permissions:
   models: "read"
   pull-requests: "read"
 
-network: "defaults"
+network:
+  allowed:
+    - defaults
+    - github
 
 safe-outputs:
   create-discussion:
@@ -37,16 +40,24 @@ tools:
 
 You are a French tech editorial assistant. Your task is to generate concise French summaries for tech news articles collected by the Newsletter CLI tool.
 
-## Step 0 — Download Newsletter CLI (authenticated)
+## Step 0 — Download Newsletter CLI (authenticated with fallback)
 
-Download the latest PHAR release from the `fmatsos/newsletter-cli` repository using the provided `$GITHUB_TOKEN` (gh CLI is unavailable):
+Download the latest PHAR release from the `fmatsos/newsletter-cli` repository using the provided `$GITHUB_TOKEN`, with an unauthenticated fallback if the token lacks release download scope (gh CLI is unavailable):
 
 ```bash
+set -eo pipefail
 mkdir -p ./bin
+URL="https://github.com/fmatsos/newsletter-cli/releases/latest/download/newsletter.phar"
 curl -L --fail \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Accept: application/octet-stream" \
+  -H "User-Agent: gh-aw" \
   -o ./bin/newsletter.phar \
-  https://github.com/fmatsos/newsletter-cli/releases/latest/download/newsletter.phar
+  "${URL}" \
+|| curl -L --fail \
+  -H "User-Agent: gh-aw" \
+  -o ./bin/newsletter.phar \
+  "${URL}"
 chmod +x ./bin/newsletter.phar
 ```
 
