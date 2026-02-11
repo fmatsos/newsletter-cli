@@ -38,45 +38,27 @@ categories:
 feeds:
   - category_id: ai
     sources:
-      - 'https://openai.com/news/rss.xml'
-      - 'https://blog.jetbrains.com/ai/feed/'
-      - 'https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml'
-      - 'https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_claude.xml'
+      'OpenAI': 'https://openai.com/news/rss.xml'
+      'JetBrains AI': 'https://blog.jetbrains.com/ai/feed/'
+      'Anthropic News': 'https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml'
+      'Claude Blog': 'https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_claude.xml'
 
   - category_id: php
     sources:
-      - 'https://feeds.feedburner.com/symfony/blog'
-      - 'https://blog.jetbrains.com/phpstorm/feed/'
-      - 'https://php.watch/feed/news.xml'
-      - 'https://php.watch/feed/php-changes.xml'
-      - 'https://stitcher.io/rss'
-      - 'https://sylius.com/blog/feed/'
-      - 'https://news.humancoders.com/t/php/items/feed'
-      - 'https://phpstan.org/rss.xml'
+      'Symfony Blog': 'https://feeds.feedburner.com/symfony/blog'
+      'JetBrains PhpStorm': 'https://blog.jetbrains.com/phpstorm/feed/'
+      'PHP.Watch': 'https://php.watch/feed/news.xml'
+      'PHP.Watch (changes)': 'https://php.watch/feed/php-changes.xml'
+      'Stitcher.io': 'https://stitcher.io/rss'
+      'Sylius': 'https://sylius.com/blog/feed/'
+      'Human Coders PHP': 'https://news.humancoders.com/t/php/items/feed'
+      'PHPStan': 'https://phpstan.org/rss.xml'
 
   - category_id: tools
     sources:
-      - 'https://github.blog/feed'
-      - 'https://github.blog/changelog/feed/'
-      - 'https://blog.jetbrains.com/toolbox-app/feed/'
-
-source_names:
-  'github.blog/feed': 'GitHub Blog'
-  'github.blog/changelog/feed': 'GitHub Changelog'
-  'openai.com/news/rss.xml': 'OpenAI'
-  'feeds.feedburner.com/symfony/blog': 'Symfony Blog'
-  'blog.jetbrains.com/phpstorm/feed': 'JetBrains PhpStorm'
-  'blog.jetbrains.com/ai/feed': 'JetBrains AI'
-  'blog.jetbrains.com/toolbox-app/feed': 'JetBrains Toolbox'
-  'php.watch/feed/news.xml': 'PHP.Watch'
-  'php.watch/feed/php-changes.xml': 'PHP.Watch'
-  'stitcher.io/rss': 'Stitcher.io'
-  'stitcher.io/feed/rss': 'Stitcher.io'
-  'sylius.com/blog/feed': 'Sylius'
-  'news.humancoders.com/t/php/items/feed': 'Human Coders PHP'
-  'phpstan.org/rss.xml': 'PHPStan'
-  'feed_anthropic_news.xml': 'Anthropic News'
-  'feed_claude.xml': 'Claude Blog'
+      'GitHub Blog': 'https://github.blog/feed'
+      'GitHub Changelog': 'https://github.blog/changelog/feed/'
+      'JetBrains Toolbox': 'https://blog.jetbrains.com/toolbox-app/feed/'
 
 max_articles_per_feed: 5
-max_articles_per_category: 8
+max_articles_per_category: 10

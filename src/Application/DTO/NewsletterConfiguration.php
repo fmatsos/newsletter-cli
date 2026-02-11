@@ -5,20 +5,19 @@ declare(strict_types=1);
 namespace Akawaka\Newsletter\Application\DTO;
 
 use Akawaka\Newsletter\Domain\Model\Category;
+use Akawaka\Newsletter\Domain\Model\FeedSource;
 
 final readonly class NewsletterConfiguration
 {
     /**
-     * @param list<string>                         $recipients
-     * @param list<Category>                       $categories
-     * @param array<string, list<string>>           $feedsByCategoryId  Map of category_id => feed URLs
-     * @param array<string, string>                $sourceNames        Map of URL pattern => human-friendly name
+     * @param list<string>                            $recipients
+     * @param list<Category>                          $categories
+     * @param array<string, list<FeedSource>>         $feedsByCategoryId  Map of category_id => feed sources
      */
     public function __construct(
         private array $recipients,
         private array $categories,
         private array $feedsByCategoryId,
-        private array $sourceNames,
         private int $maxArticlesPerFeed = 5,
         private int $maxArticlesPerCategory = 8,
     ) {
@@ -36,16 +35,10 @@ final readonly class NewsletterConfiguration
         return $this->categories;
     }
 
-    /** @return list<string> */
+    /** @return list<FeedSource> */
     public function feedsForCategory(string $categoryId): array
     {
         return $this->feedsByCategoryId[$categoryId] ?? [];
-    }
-
-    /** @return array<string, string> */
-    public function sourceNames(): array
-    {
-        return $this->sourceNames;
     }
 
     public function maxArticlesPerFeed(): int

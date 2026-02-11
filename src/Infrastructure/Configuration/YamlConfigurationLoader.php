@@ -6,6 +6,7 @@ namespace Akawaka\Newsletter\Infrastructure\Configuration;
 
 use Akawaka\Newsletter\Application\DTO\NewsletterConfiguration;
 use Akawaka\Newsletter\Domain\Model\Category;
+use Akawaka\Newsletter\Domain\Model\FeedSource;
 use Symfony\Component\Yaml\Yaml;
 
 final class YamlConfigurationLoader
@@ -49,11 +50,17 @@ final class YamlConfigurationLoader
         $feedsByCategoryId = [];
         foreach ($raw['feeds'] ?? [] as $feedGroup) {
             $categoryId = (string) $feedGroup['category_id'];
-            $feedsByCategoryId[$categoryId] = array_map('strval', $feedGroup['sources'] ?? []);
+            $sources = [];
+            foreach ($feedGroup['sources'] ?? [] as $name => $url) {
+                $sources[] = new FeedSource(
+                    name: is_int($name) ? '' : (string) $name,
+                    url: (string) $url,
+                );
+            }
+
+            $feedsByCategoryId[$categoryId] = $sources;
         }
 
-        /** @var array<string, string> $sourceNames */
-        $sourceNames = $raw['source_names'] ?? [];
         $maxPerFeed = (int) ($raw['max_articles_per_feed'] ?? 5);
         $maxPerCategory = (int) ($raw['max_articles_per_category'] ?? 8);
 
@@ -61,7 +68,6 @@ final class YamlConfigurationLoader
             recipients: $recipients,
             categories: $categories,
             feedsByCategoryId: $feedsByCategoryId,
-            sourceNames: $sourceNames,
             maxArticlesPerFeed: $maxPerFeed,
             maxArticlesPerCategory: $maxPerCategory,
         );

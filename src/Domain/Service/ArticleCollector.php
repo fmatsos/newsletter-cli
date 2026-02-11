@@ -6,6 +6,7 @@ namespace Akawaka\Newsletter\Domain\Service;
 
 use Akawaka\Newsletter\Domain\Model\Article;
 use Akawaka\Newsletter\Domain\Model\DateWindow;
+use Akawaka\Newsletter\Domain\Model\FeedSource;
 use Akawaka\Newsletter\Domain\Port\FeedFetcherInterface;
 use Akawaka\Newsletter\Domain\Port\FeedParserInterface;
 
@@ -20,23 +21,22 @@ final readonly class ArticleCollector
     /**
      * Collects articles from feeds, filters by date window, deduplicates and limits.
      *
-     * @param list<string>         $feedUrls
-     * @param array<string,string> $sourceNames Map of URL pattern => human-friendly name
+     * @param list<FeedSource> $feedSources
      *
      * @return list<Article>
      */
     public function collect(
-        array $feedUrls,
+        array $feedSources,
         string $categoryId,
         DateWindow $dateWindow,
-        array $sourceNames,
         int $maxPerFeed = 5,
         int $maxPerCategory = 8,
     ): array {
         $allArticles = [];
 
-        foreach ($feedUrls as $url) {
-            $sourceName = $this->deriveSourceName($url, $sourceNames);
+        foreach ($feedSources as $feedSource) {
+            $url = $feedSource->url();
+            $sourceName = $feedSource->name() ?: $this->deriveSourceNameFromUrl($url);
 
             $rawXml = $this->fetcher->fetch($url);
             if (null === $rawXml) {
@@ -109,18 +109,11 @@ final readonly class ArticleCollector
     }
 
     /**
-     * @param array<string,string> $sourceNames
      */
-    private function deriveSourceName(string $url, array $sourceNames): string
+    private function deriveSourceNameFromUrl(string $url): string
     {
         $clean = preg_replace('#^https?://#', '', $url);
         $clean = rtrim($clean, '/');
-
-        foreach ($sourceNames as $pattern => $name) {
-            if (str_contains($clean, $pattern)) {
-                return $name;
-            }
-        }
 
         $domain = explode('/', $clean)[0];
         $domain = str_replace('www.', '', $domain);

@@ -9,6 +9,7 @@ use Akawaka\Newsletter\Application\DTO\NewsletterConfiguration;
 use Akawaka\Newsletter\Domain\Model\Article;
 use Akawaka\Newsletter\Domain\Model\Category;
 use Akawaka\Newsletter\Domain\Model\DateWindow;
+use Akawaka\Newsletter\Domain\Model\FeedSource;
 use Akawaka\Newsletter\Domain\Port\ArticleSummarizerInterface;
 use Akawaka\Newsletter\Domain\Port\NewsletterPublisherInterface;
 use Akawaka\Newsletter\Domain\Port\NewsletterRendererInterface;
@@ -123,7 +124,6 @@ final class BuildNewsletterHandlerTest extends TestCase
             recipients: [],
             categories: [new Category('empty', 'Empty', '#000', '#fff', '', '', '', '#000', '#fff', '#000')],
             feedsByCategoryId: [],
-            sourceNames: [],
         );
 
         $result = $this->handler->handle($config);
@@ -202,9 +202,8 @@ final class BuildNewsletterHandlerTest extends TestCase
                 new Category('php', 'PHP', '#4B82E8', '#fff', '', '', '', '#4B82E8', '#E9F0FD', '#2558CC'),
             ],
             feedsByCategoryId: [
-                'php' => ['https://feed.example.com/rss'],
+                'php' => [new FeedSource('Example Feed', 'https://feed.example.com/rss')],
             ],
-            sourceNames: [],
         );
     }
 }

@@ -179,10 +179,9 @@ final class BuildNewsletterCommand extends Command
             }
 
             $articles = $articleCollector->collect(
-                feedUrls: $feeds,
+                feedSources: $feeds,
                 categoryId: $category->id(),
                 dateWindow: $dateWindow,
-                sourceNames: $config->sourceNames(),
                 maxPerFeed: $config->maxArticlesPerFeed(),
                 maxPerCategory: $config->maxArticlesPerCategory(),
             );

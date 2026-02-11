@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Akawaka\Newsletter\Tests\Infrastructure\Configuration;
 
 use Akawaka\Newsletter\Infrastructure\Configuration\YamlConfigurationLoader;
+use Akawaka\Newsletter\Domain\Model\FeedSource;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -46,9 +47,7 @@ final class YamlConfigurationLoaderTest extends TestCase
             feeds:
               - category_id: php
                 sources:
-                  - 'https://feed.example.com/rss'
-            source_names:
-              'feed.example.com/rss': 'Example Feed'
+                  'Example Feed': 'https://feed.example.com/rss'
             max_articles_per_feed: 3
             max_articles_per_category: 5
             YAML;
@@ -63,9 +62,12 @@ final class YamlConfigurationLoaderTest extends TestCase
         self::assertCount(1, $config->categories());
         self::assertSame('php', $config->categories()[0]->id());
         self::assertSame('PHP', $config->categories()[0]->label());
-        self::assertSame(['https://feed.example.com/rss'], $config->feedsForCategory('php'));
+        $feeds = $config->feedsForCategory('php');
+        self::assertCount(1, $feeds);
+        self::assertInstanceOf(FeedSource::class, $feeds[0]);
+        self::assertSame('Example Feed', $feeds[0]->name());
+        self::assertSame('https://feed.example.com/rss', $feeds[0]->url());
         self::assertSame([], $config->feedsForCategory('nonexistent'));
-        self::assertSame('Example Feed', $config->sourceNames()['feed.example.com/rss']);
         self::assertSame(3, $config->maxArticlesPerFeed());
         self::assertSame(5, $config->maxArticlesPerCategory());
     }
