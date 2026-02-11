@@ -1,0 +1,7 @@
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/newsletter-output.html
+/.phpunit.result.cache
+/dist/
+.idea

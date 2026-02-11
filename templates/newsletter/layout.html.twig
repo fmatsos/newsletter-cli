@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>{{ result.subject }}</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style type="text/css">
+        body { margin: 0; padding: 0; background-color: #f4f4f7; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table { border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        a { color: #4B82E8; text-decoration: none; }
+    </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:Arial,Helvetica,sans-serif;">
+<center>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f4f7" style="background-color:#f4f4f7;">
+        <tr>
+            <td align="center" style="padding:20px 10px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+
+                    {# Header #}
+                    <tr>
+                        <td align="center" style="padding:30px 0 20px 0;">
+                            <span style="font-size:28px;font-weight:900;color:#1a1a2e;letter-spacing:-0.5px;font-family:Arial,Helvetica,sans-serif;">
+                                &#128225; Akawaka Veille Tech
+                            </span>
+                            <br/>
+                            <span style="font-size:15px;color:#64748b;font-family:Arial,Helvetica,sans-serif;">
+                                {{ date_label }}
+                            </span>
+                        </td>
+                    </tr>
+
+                    {# Dynamic content — categories with articles #}
+                    {% for category in categories %}
+                        {% set articles = articles_by_category[category.id()] | default([]) %}
+
+                        {% include 'newsletter/category_banner.html.twig' with { category: category } %}
+
+                        {% if articles | length > 0 %}
+                            {% for article in articles %}
+                                {% include 'newsletter/article_card.html.twig' with {
+                                    article: article,
+                                    category: category,
+                                } %}
+                            {% endfor %}
+                        {% else %}
+                            {% include 'newsletter/empty_state.html.twig' with { is_monday: is_monday } %}
+                        {% endif %}
+
+                        {% include 'newsletter/category_footer.html.twig' %}
+                    {% endfor %}
+
+                    {# Footer #}
+                    <tr>
+                        <td align="center" style="padding:30px 0 20px 0;">
+                            <span style="font-size:13px;color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">
+                                G&#233;n&#233;r&#233; automatiquement par GitHub Actions &#8212; Akawaka
+                            </span>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</center>
+</body>
+</html>

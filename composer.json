@@ -1,0 +1,47 @@
+{
+    "name": "akawaka/newsletter-cli",
+    "description": "Akawaka Newsletter CLI",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.3",
+        "symfony/console": "^7.2",
+        "symfony/http-client": "^7.2",
+        "symfony/twig-bridge": "^7.2",
+        "symfony/yaml": "^7.2",
+        "symfony/process": "^7.2",
+        "twig/twig": "^3.14",
+        "twig/intl-extra": "^3.14"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Akawaka\\Newsletter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Akawaka\\Newsletter\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse src tests --level=8",
+        "build": [
+            "@composer install --no-dev --optimize-autoloader"
+        ],
+        "build:phar": [
+            "@build",
+            "box compile"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        }
+    }
+}

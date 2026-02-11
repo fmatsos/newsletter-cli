@@ -1,0 +1,93 @@
+name: Daily Newsletter Digest
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not publish)'
+        required: false
+        default: 'false'
+        type: boolean
+      output_html:
+        description: 'Save HTML as artifact'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  discussions: write
+  contents: write
+  issues: write
+
+jobs:
+  build-newsletter:
+    name: Build & Publish Newsletter
+    runs-on: ubuntu-latest
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download newsletter PHAR
+        run: |
+          gh release download --repo ${{ github.repository }} --pattern 'newsletter.phar' --dir ./bin || {
+            echo "::error::No PHAR release found. Please create a release first (tag v*)."
+            exit 1
+          }
+          chmod +x ./bin/newsletter.phar
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Ensure config exists
+        run: |
+          if [ ! -f config/newsletter.yaml ]; then
+            cp config/newsletter.yaml.dist config/newsletter.yaml
+          fi
+
+      - name: Build newsletter
+        id: build
+        run: |
+          DRY_RUN_FLAG=""
+          OUTPUT_FLAG=""
+
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+
+          if [[ "${{ inputs.output_html }}" == "true" ]] || [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            OUTPUT_FLAG="--output=newsletter-output.html"
+          fi
+
+          php ./bin/newsletter.phar newsletter:build \
+            --config=config/newsletter.yaml \
+            --templates=templates \
+            --repository=${{ github.repository }} \
+            --discussion-category=General \
+            --anthropic-api-key="${ANTHROPIC_API_KEY}" \
+            --archive-dir=newsletters \
+            ${DRY_RUN_FLAG} \
+            ${OUTPUT_FLAG} \
+            -v
+
+      - name: Commit newsletter archive
+        if: success() && inputs.dry_run != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add newsletters/
+          git diff --cached --quiet || git commit -m "📰 Archive newsletter $(date +%Y-%m-%d)"
+          git push
+
+      - name: Upload HTML artifact
+        if: always() && (inputs.output_html == 'true' || inputs.dry_run == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: newsletter-${{ github.run_id }}
+          path: newsletter-output.html
+          retention-days: 30
+          if-no-files-found: ignore

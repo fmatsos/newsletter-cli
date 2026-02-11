@@ -1,0 +1,30 @@
+{
+    "main": "bin/console",
+    "output": "dist/newsletter.phar",
+    "directories": [
+        "src"
+    ],
+    "files": [
+        "composer.json",
+        "vendor/symfony/console/Resources/completion.bash",
+        "vendor/symfony/console/Resources/completion.fish",
+        "vendor/symfony/console/Resources/completion.zsh",
+        "vendor/symfony/console/Resources/bin/hiddeninput.exe"
+    ],
+    "finder": [
+        {
+            "name": "*.php",
+            "in": [
+                "vendor"
+            ],
+            "exclude": [
+                "doc",
+                "docs"
+            ]
+        }
+    ],
+    "compression": "GZ",
+    "compactors": [
+        "KevinGH\\Box\\Compactor\\Php"
+    ]
+}

@@ -1,0 +1,58 @@
+name: Build & Release PHAR
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-phar:
+    name: Build PHAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: simplexml, mbstring, curl, phar
+          tools: box
+          ini-values: phar.readonly=0
+          coverage: none
+
+      - name: Install dependencies (no dev)
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Build PHAR
+        run: box compile
+
+      - name: Smoke test
+        run: php dist/newsletter.phar --version
+
+      - name: Calculate SHA256
+        run: |
+          cd dist
+          sha256sum newsletter.phar > newsletter.phar.sha256
+          cat newsletter.phar.sha256
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/newsletter.phar
+            dist/newsletter.phar.sha256
+
+      - name: Upload artifact (manual dispatch)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: newsletter-phar
+          path: dist/newsletter.phar

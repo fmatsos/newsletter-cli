@@ -1,0 +1,14 @@
+<tr>
+  <td bgcolor="#ffffff" style="background-color:#ffffff;padding:16px 28px;border-bottom:1px solid #f0f0f0;font-family:Arial,Helvetica,sans-serif;">
+    <a href="{{ article.link() }}" style="font-size:18px;font-weight:bold;color:#1a1a2e;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">{{ article.title() }}</a>
+    <span style="display:block;padding:8px 0 12px 0;font-size:15px;line-height:24px;color:#444444;font-family:Arial,Helvetica,sans-serif;">
+      {{ article.summary() ?: article.description() }}
+    </span>
+    <span style="font-size:13px;color:#666666;font-family:Arial,Helvetica,sans-serif;">
+      {{ article.source() }}
+      {% if article.hasDate() %}
+        &middot; {{ format_date_short(article.date()) }}
+      {% endif %}
+    </span>
+  </td>
+</tr>
