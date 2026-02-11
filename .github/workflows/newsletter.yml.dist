@@ -15,21 +15,11 @@ on:
         required: false
         default: 'true'
         type: boolean
-      brief_mode:
-        description: 'Brief generation mode'
-        required: false
-        default: 'none'
-        type: choice
-        options:
-          - none
-          - anthropic
-          - copilot
 
 permissions:
   discussions: write
   contents: write
   issues: write
-  models: read
 
 jobs:
   build-newsletter:
@@ -50,12 +40,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Install GitHub Models extension
-        if: inputs.brief_mode == 'copilot'
-        run: gh extension install github/gh-models
-        env:
-          GH_TOKEN: ${{ github.token }}
-
       - name: Ensure config exists
         run: |
           if [ ! -f config/newsletter.yaml ]; then
@@ -67,7 +51,7 @@ jobs:
         run: |
           DRY_RUN_FLAG=""
           OUTPUT_FLAG=""
-          BRIEF_FLAGS=""
+          ANTHROPIC_FLAG=""
 
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
             DRY_RUN_FLAG="--dry-run"
@@ -77,11 +61,8 @@ jobs:
             OUTPUT_FLAG="--output=newsletter-output.html"
           fi
 
-          BRIEF_MODE="${{ inputs.brief_mode }}"
-          if [[ "${BRIEF_MODE}" == "anthropic" ]] && [[ -n "${ANTHROPIC_API_KEY}" ]]; then
-            BRIEF_FLAGS="--anthropic-api-key=${ANTHROPIC_API_KEY}"
-          elif [[ "${BRIEF_MODE}" == "copilot" ]]; then
-            BRIEF_FLAGS="--copilot"
+          if [[ -n "${ANTHROPIC_API_KEY}" ]]; then
+            ANTHROPIC_FLAG="--anthropic-api-key=${ANTHROPIC_API_KEY}"
           fi
 
           php ./bin/newsletter.phar newsletter:build \
@@ -90,13 +71,12 @@ jobs:
             --repository=${{ github.repository }} \
             --discussion-category=General \
             --archive-dir=newsletters \
-            ${BRIEF_FLAGS} \
+            ${ANTHROPIC_FLAG} \
             ${DRY_RUN_FLAG} \
             ${OUTPUT_FLAG} \
             -v
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
 
       - name: Commit newsletter archive
         if: success() && inputs.dry_run != 'true'

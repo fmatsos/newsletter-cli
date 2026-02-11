@@ -15,8 +15,8 @@ use Akawaka\Newsletter\Infrastructure\Publisher\FileNewsletterArchiver;
 use Akawaka\Newsletter\Infrastructure\Publisher\GithubDiscussionPublisher;
 use Akawaka\Newsletter\Infrastructure\Renderer\TwigNewsletterRenderer;
 use Akawaka\Newsletter\Infrastructure\Summarizer\ClaudeArticleSummarizer;
-use Akawaka\Newsletter\Infrastructure\Summarizer\CopilotArticleSummarizer;
 use Akawaka\Newsletter\Infrastructure\Summarizer\DescriptionFallbackSummarizer;
+use Akawaka\Newsletter\Infrastructure\Summarizer\JsonBriefImporter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
@@ -48,8 +48,10 @@ final class BuildNewsletterCommand extends Command
         bool $dryRun = false,
         #[Option(name: 'anthropic-api-key', description: 'Anthropic API key (or set ANTHROPIC_API_KEY env)')]
         ?string $anthropicApiKey = null,
-        #[Option(name: 'copilot', description: 'Use GitHub Copilot (gh models run gpt-4.1) for brief generation')]
-        bool $copilot = false,
+        #[Option(name: 'export-articles', description: 'Export collected articles to JSON file and exit')]
+        ?string $exportArticles = null,
+        #[Option(name: 'import-briefs', description: 'Import briefs from JSON file (url => brief mapping)')]
+        ?string $importBriefs = null,
         #[Option(name: 'archive-dir', description: 'Directory to archive newsletter HTML files')]
         ?string $archiveDir = null,
     ): int {
@@ -57,7 +59,7 @@ final class BuildNewsletterCommand extends Command
 
         $apiKey = $anthropicApiKey ?? (string) getenv('ANTHROPIC_API_KEY');
 
-        if (!$dryRun && '' === $repository) {
+        if (!$dryRun && null === $exportArticles && '' === $repository) {
             $io->error('Repository is required when not in dry-run mode. Use --repository or --dry-run.');
 
             return Command::FAILURE;
@@ -72,6 +74,17 @@ final class BuildNewsletterCommand extends Command
             $io->text(sprintf('Recipients: %s', implode(', ', $newsletterConfig->recipients())));
 
             $httpClient = HttpClient::create();
+
+            $dateWindowCalculator = new DateWindowCalculator();
+            $articleCollector = new ArticleCollector(
+                fetcher: new HttpFeedFetcher($httpClient),
+                parser: new XmlFeedParser(),
+            );
+
+            // Export articles mode: collect articles, write JSON, and exit
+            if (null !== $exportArticles) {
+                return $this->exportArticles($io, $newsletterConfig, $dateWindowCalculator, $articleCollector, $exportArticles);
+            }
 
             $publishers = [];
 
@@ -93,24 +106,21 @@ final class BuildNewsletterCommand extends Command
             $twig = $this->createTwigEnvironment($templates);
 
             $summarizer = match (true) {
-                $copilot => new CopilotArticleSummarizer(),
+                null !== $importBriefs => new JsonBriefImporter($importBriefs),
                 '' !== $apiKey => new ClaudeArticleSummarizer($httpClient, $apiKey),
                 default => new DescriptionFallbackSummarizer(),
             };
 
             $briefMode = match (true) {
-                $copilot => 'copilot (gh models run gpt-4.1)',
+                null !== $importBriefs => sprintf('import (%s)', $importBriefs),
                 '' !== $apiKey => 'anthropic (Claude API)',
                 default => 'none (truncated descriptions)',
             };
             $io->text(sprintf('Brief generation: %s', $briefMode));
 
             $handler = new BuildNewsletterHandler(
-                dateWindowCalculator: new DateWindowCalculator(),
-                articleCollector: new ArticleCollector(
-                    fetcher: new HttpFeedFetcher($httpClient),
-                    parser: new XmlFeedParser(),
-                ),
+                dateWindowCalculator: $dateWindowCalculator,
+                articleCollector: $articleCollector,
                 summarizer: $summarizer,
                 renderer: new TwigNewsletterRenderer($twig),
                 publisher: $publisher,
@@ -150,6 +160,50 @@ final class BuildNewsletterCommand extends Command
 
             return Command::FAILURE;
         }
+    }
+
+    private function exportArticles(
+        SymfonyStyle $io,
+        \Akawaka\Newsletter\Application\DTO\NewsletterConfiguration $config,
+        DateWindowCalculator $dateWindowCalculator,
+        ArticleCollector $articleCollector,
+        string $exportPath,
+    ): int {
+        $dateWindow = $dateWindowCalculator->compute();
+
+        $allArticles = [];
+        foreach ($config->categories() as $category) {
+            $feeds = $config->feedsForCategory($category->id());
+            if ([] === $feeds) {
+                continue;
+            }
+
+            $articles = $articleCollector->collect(
+                feedUrls: $feeds,
+                categoryId: $category->id(),
+                dateWindow: $dateWindow,
+                sourceNames: $config->sourceNames(),
+                maxPerFeed: $config->maxArticlesPerFeed(),
+                maxPerCategory: $config->maxArticlesPerCategory(),
+            );
+
+            foreach ($articles as $article) {
+                $allArticles[] = [
+                    'url' => $article->link(),
+                    'title' => $article->title(),
+                    'description' => $article->description(),
+                    'source' => $article->source(),
+                    'category' => $article->categoryId(),
+                    'date' => $article->date()?->format(\DateTimeInterface::ATOM),
+                ];
+            }
+        }
+
+        file_put_contents($exportPath, json_encode($allArticles, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE));
+
+        $io->success(sprintf('Exported %d articles to %s', \count($allArticles), $exportPath));
+
+        return Command::SUCCESS;
     }
 
     private function createTwigEnvironment(string $templatesPath): Environment
