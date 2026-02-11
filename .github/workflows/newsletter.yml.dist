@@ -15,19 +15,26 @@ on:
         required: false
         default: 'true'
         type: boolean
+      brief_mode:
+        description: 'Brief generation mode'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - anthropic
+          - copilot
 
 permissions:
   discussions: write
   contents: write
   issues: write
+  models: read
 
 jobs:
   build-newsletter:
     name: Build & Publish Newsletter
     runs-on: ubuntu-latest
-
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -43,6 +50,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Install GitHub Models extension
+        if: inputs.brief_mode == 'copilot'
+        run: gh extension install github/gh-models
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Ensure config exists
         run: |
           if [ ! -f config/newsletter.yaml ]; then
@@ -54,6 +67,7 @@ jobs:
         run: |
           DRY_RUN_FLAG=""
           OUTPUT_FLAG=""
+          BRIEF_FLAGS=""
 
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
             DRY_RUN_FLAG="--dry-run"
@@ -63,16 +77,26 @@ jobs:
             OUTPUT_FLAG="--output=newsletter-output.html"
           fi
 
+          BRIEF_MODE="${{ inputs.brief_mode }}"
+          if [[ "${BRIEF_MODE}" == "anthropic" ]] && [[ -n "${ANTHROPIC_API_KEY}" ]]; then
+            BRIEF_FLAGS="--anthropic-api-key=${ANTHROPIC_API_KEY}"
+          elif [[ "${BRIEF_MODE}" == "copilot" ]]; then
+            BRIEF_FLAGS="--copilot"
+          fi
+
           php ./bin/newsletter.phar newsletter:build \
             --config=config/newsletter.yaml \
             --templates=templates \
             --repository=${{ github.repository }} \
             --discussion-category=General \
-            --anthropic-api-key="${ANTHROPIC_API_KEY}" \
             --archive-dir=newsletters \
+            ${BRIEF_FLAGS} \
             ${DRY_RUN_FLAG} \
             ${OUTPUT_FLAG} \
             -v
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Commit newsletter archive
         if: success() && inputs.dry_run != 'true'

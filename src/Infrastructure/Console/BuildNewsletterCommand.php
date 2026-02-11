@@ -15,6 +15,8 @@ use Akawaka\Newsletter\Infrastructure\Publisher\FileNewsletterArchiver;
 use Akawaka\Newsletter\Infrastructure\Publisher\GithubDiscussionPublisher;
 use Akawaka\Newsletter\Infrastructure\Renderer\TwigNewsletterRenderer;
 use Akawaka\Newsletter\Infrastructure\Summarizer\ClaudeArticleSummarizer;
+use Akawaka\Newsletter\Infrastructure\Summarizer\CopilotArticleSummarizer;
+use Akawaka\Newsletter\Infrastructure\Summarizer\DescriptionFallbackSummarizer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
@@ -46,6 +48,8 @@ final class BuildNewsletterCommand extends Command
         bool $dryRun = false,
         #[Option(name: 'anthropic-api-key', description: 'Anthropic API key (or set ANTHROPIC_API_KEY env)')]
         ?string $anthropicApiKey = null,
+        #[Option(name: 'copilot', description: 'Use GitHub Copilot (gh models run gpt-4.1) for brief generation')]
+        bool $copilot = false,
         #[Option(name: 'archive-dir', description: 'Directory to archive newsletter HTML files')]
         ?string $archiveDir = null,
     ): int {
@@ -88,13 +92,26 @@ final class BuildNewsletterCommand extends Command
 
             $twig = $this->createTwigEnvironment($templates);
 
+            $summarizer = match (true) {
+                $copilot => new CopilotArticleSummarizer(),
+                '' !== $apiKey => new ClaudeArticleSummarizer($httpClient, $apiKey),
+                default => new DescriptionFallbackSummarizer(),
+            };
+
+            $briefMode = match (true) {
+                $copilot => 'copilot (gh models run gpt-4.1)',
+                '' !== $apiKey => 'anthropic (Claude API)',
+                default => 'none (truncated descriptions)',
+            };
+            $io->text(sprintf('Brief generation: %s', $briefMode));
+
             $handler = new BuildNewsletterHandler(
                 dateWindowCalculator: new DateWindowCalculator(),
                 articleCollector: new ArticleCollector(
                     fetcher: new HttpFeedFetcher($httpClient),
                     parser: new XmlFeedParser(),
                 ),
-                summarizer: new ClaudeArticleSummarizer($httpClient, $apiKey),
+                summarizer: $summarizer,
                 renderer: new TwigNewsletterRenderer($twig),
                 publisher: $publisher,
             );
