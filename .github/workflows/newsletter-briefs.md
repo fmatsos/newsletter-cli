@@ -22,10 +22,45 @@ permissions:
   models: "read"
   pull-requests: "read"
 
+runs-on: "ubuntu-latest"
+
+steps:
+  - name: Preinstall PHP for Newsletter CLI
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y php-cli php-zip
+      php -v
+  - name: Download Newsletter CLI PHAR
+    env:
+      NEWSLETTER_PHAR_URL: https://github.com/fmatsos/newsletter-cli/releases/latest/download/newsletter.phar
+      GITHUB_TOKEN: ${{ github.token }}
+    run: |
+      set -eo pipefail
+      mkdir -p ./bin
+      curl -L --fail \
+        -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+        -H "Accept: application/octet-stream" \
+        -H "User-Agent: gh-aw" \
+        -o ./bin/newsletter.phar \
+        "${NEWSLETTER_PHAR_URL}" \
+      || curl -L --fail \
+        -H "User-Agent: gh-aw" \
+        -o ./bin/newsletter.phar \
+        "${NEWSLETTER_PHAR_URL}"
+      chmod +x ./bin/newsletter.phar
+  - name: Collect articles with Newsletter CLI
+    run: |
+      set -eo pipefail
+      php ./bin/newsletter.phar newsletter:build \
+        --config=config/newsletter.yaml \
+        --export-articles=articles.json \
+        -v
+
 network:
   allowed:
     - defaults
     - github
+    - linux-distros
 
 safe-outputs:
   create-discussion:
@@ -40,33 +75,22 @@ tools:
 
 You are a French tech editorial assistant. Your task is to generate concise French summaries for tech news articles collected by the Newsletter CLI tool.
 
-## Step 0 — Download Newsletter CLI (authenticated with fallback)
+## Step 0 — Verify PHP and Newsletter CLI
 
-Download the latest PHAR release from the `fmatsos/newsletter-cli` repository using the provided `$GITHUB_TOKEN`, with an unauthenticated fallback if the token lacks release download scope (gh CLI is unavailable):
+Confirm PHP with Phar support is available (preinstalled via workflow steps), and ensure `./bin/newsletter.phar` exists:
 
 ```bash
 set -eo pipefail
-mkdir -p ./bin
-URL="https://github.com/fmatsos/newsletter-cli/releases/latest/download/newsletter.phar"
-curl -L --fail \
-  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-  -H "Accept: application/octet-stream" \
-  -H "User-Agent: gh-aw" \
-  -o ./bin/newsletter.phar \
-  "${URL}" \
-|| curl -L --fail \
-  -H "User-Agent: gh-aw" \
-  -o ./bin/newsletter.phar \
-  "${URL}"
-chmod +x ./bin/newsletter.phar
+php -v
+./bin/newsletter.phar --version
 ```
 
 ## Step 1 — Collect articles
 
-Run the Newsletter CLI to collect articles from RSS/Atom feeds and export them to a JSON file:
+Articles are pre-collected in `articles.json` via workflow steps. Rerun the Newsletter CLI if you need to refresh the feed data:
 
 ```bash
-php ./bin/newsletter.phar newsletter:build \
+php ./bin/newsletter.phar \
   --config=config/newsletter.yaml \
   --export-articles=articles.json \
   -v
@@ -111,7 +135,7 @@ BRIEFS_EOF
 Run the Newsletter CLI again, this time importing the generated briefs:
 
 ```bash
-php ./bin/newsletter.phar newsletter:build \
+php ./bin/newsletter.phar \
   --config=config/newsletter.yaml \
   --templates=templates \
   --repository=${{ github.repository }} \
