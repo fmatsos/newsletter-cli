@@ -26,9 +26,6 @@ jobs:
     name: Build & Publish Newsletter
     runs-on: ubuntu-latest
 
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,6 +51,7 @@ jobs:
         run: |
           DRY_RUN_FLAG=""
           OUTPUT_FLAG=""
+          ANTHROPIC_FLAG=""
 
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
             DRY_RUN_FLAG="--dry-run"
@@ -63,16 +61,22 @@ jobs:
             OUTPUT_FLAG="--output=newsletter-output.html"
           fi
 
+          if [[ -n "${ANTHROPIC_API_KEY}" ]]; then
+            ANTHROPIC_FLAG="--anthropic-api-key=${ANTHROPIC_API_KEY}"
+          fi
+
           php ./bin/newsletter.phar newsletter:build \
             --config=config/newsletter.yaml \
             --templates=templates \
             --repository=${{ github.repository }} \
             --discussion-category=General \
-            --anthropic-api-key="${ANTHROPIC_API_KEY}" \
             --archive-dir=newsletters \
+            ${ANTHROPIC_FLAG} \
             ${DRY_RUN_FLAG} \
             ${OUTPUT_FLAG} \
             -v
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Commit newsletter archive
         if: success() && inputs.dry_run != 'true'
