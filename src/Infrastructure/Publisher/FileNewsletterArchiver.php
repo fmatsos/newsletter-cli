@@ -10,20 +10,21 @@ final readonly class FileNewsletterArchiver implements NewsletterPublisherInterf
 {
     public function __construct(
         private string $archiveDirectory,
+        private string $fileExtension = 'html',
     ) {
     }
 
     #[\Override]
-    public function publish(string $title, string $htmlContent, string $label): string
+    public function publish(string $title, string $content, string $label): string
     {
         if (!is_dir($this->archiveDirectory)) {
             mkdir($this->archiveDirectory, 0o755, true);
         }
 
-        $filename = sprintf('%s.html', (new \DateTimeImmutable())->format('Y-m-d'));
+        $filename = sprintf('%s.%s', (new \DateTimeImmutable())->format('Y-m-d'), $this->fileExtension);
         $filepath = rtrim($this->archiveDirectory, '/') . '/' . $filename;
 
-        file_put_contents($filepath, $htmlContent);
+        file_put_contents($filepath, $content);
 
         return $filepath;
     }

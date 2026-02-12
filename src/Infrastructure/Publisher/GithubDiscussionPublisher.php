@@ -82,22 +82,25 @@ final readonly class GithubDiscussionPublisher implements NewsletterPublisherInt
     private readonly string $token;
     private readonly string $owner;
     private readonly string $repositoryName;
+    private readonly bool $isMarkdownContent;
 
     public function __construct(
         HttpClientInterface $httpClient,
         string $repository,
         string $discussionCategory = 'General',
         string $token = '',
+        bool $isMarkdownContent = false,
     ) {
         $this->httpClient = $httpClient;
         $this->repository = $repository;
         $this->discussionCategory = $discussionCategory;
         $this->token = $token;
+        $this->isMarkdownContent = $isMarkdownContent;
         [$this->owner, $this->repositoryName] = $this->splitRepository($repository);
     }
 
     #[\Override]
-    public function publish(string $title, string $htmlContent, string $label): string
+    public function publish(string $title, string $content, string $label): string
     {
         $this->ensureToken();
 
@@ -106,8 +109,10 @@ final readonly class GithubDiscussionPublisher implements NewsletterPublisherInt
         $categoryId = $identifiers['categoryId'];
 
         $labelId = $this->ensureLabelExists($repositoryId, $label);
-        $bodyMarkdown = $this->wrapHtmlInMarkdown($htmlContent);
-        $discussion = $this->createDiscussion($repositoryId, $categoryId, $title, $bodyMarkdown);
+        $body = $this->isMarkdownContent
+            ? $this->formatMarkdownBody($content)
+            : $this->wrapHtmlInMarkdown($content);
+        $discussion = $this->createDiscussion($repositoryId, $categoryId, $title, $body);
         $this->addLabel($discussion['id'], $labelId);
 
         return $discussion['url'];
@@ -249,6 +254,14 @@ final readonly class GithubDiscussionPublisher implements NewsletterPublisherInt
         return sprintf(
             "<!-- newsletter-digest -->\n\n<details>\n<summary>📧 Newsletter HTML (cliquer pour déplier)</summary>\n\n%s\n\n</details>\n\n---\n_Newsletter générée automatiquement par GitHub Actions._",
             $html,
+        );
+    }
+
+    private function formatMarkdownBody(string $markdown): string
+    {
+        return sprintf(
+            "<!-- newsletter-digest -->\n\n%s",
+            $markdown,
         );
     }
 }

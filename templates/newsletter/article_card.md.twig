@@ -1,0 +1,6 @@
+### [{{ article.title() }}]({{ article.link() }})
+
+{{ article.summary() ?: article.description() }}
+
+> **{{ article.source() }}**{% if article.hasDate() %} · {{ format_date_short(article.date()) }}{% endif %}
+

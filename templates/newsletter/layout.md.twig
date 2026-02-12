@@ -1,0 +1,23 @@
+# 📢 Akawaka Veille Tech
+
+**{{ date_label }}**
+
+---
+
+{% for category in categories %}
+{% set articles = articles_by_category[category.id()] | default([]) %}
+
+{% include 'newsletter/category_banner.md.twig' with { category: category } %}
+
+{% if articles | length > 0 %}
+{% for article in articles %}
+{% include 'newsletter/article_card.md.twig' with { article: article, category: category } %}
+{% endfor %}
+{% else %}
+{% include 'newsletter/empty_state.md.twig' with { is_monday: is_monday } %}
+{% endif %}
+
+{% endfor %}
+---
+
+*Généré automatiquement par GitHub Actions — Akawaka*

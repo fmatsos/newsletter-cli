@@ -38,7 +38,7 @@ final class BuildNewsletterCommand extends Command
         string $config = 'config/newsletter.yaml',
         #[Option(description: 'Path to templates directory', shortcut: 't')]
         string $templates = 'templates',
-        #[Option(description: 'Save HTML output to file', shortcut: 'o')]
+        #[Option(description: 'Save output to file', shortcut: 'o')]
         ?string $output = null,
         #[Option(description: 'GitHub repository (owner/repo)', shortcut: 'r')]
         string $repository = '',
@@ -56,12 +56,21 @@ final class BuildNewsletterCommand extends Command
         ?string $exportArticles = null,
         #[Option(name: 'import-briefs', description: 'Import briefs from JSON file (url => brief mapping)')]
         ?string $importBriefs = null,
-        #[Option(name: 'archive-dir', description: 'Directory to archive newsletter HTML files')]
+        #[Option(name: 'archive-dir', description: 'Directory to archive newsletter files')]
         ?string $archiveDir = null,
+        #[Option(name: 'format', description: 'Output format: html or markdown', shortcut: 'f')]
+        string $format = 'html',
     ): int {
         $io->title('Akawaka Newsletter CLI');
 
         $apiKey = $anthropicApiKey ?? (string) getenv('ANTHROPIC_API_KEY');
+
+        $format = strtolower($format);
+        if (!\in_array($format, [TwigNewsletterRenderer::FORMAT_HTML, TwigNewsletterRenderer::FORMAT_MARKDOWN], true)) {
+            $io->error('Invalid format. Use "html" or "markdown".');
+
+            return Command::FAILURE;
+        }
 
         $needsRepository = !$dryRun && null === $exportArticles && $enableDiscussion;
 
@@ -102,16 +111,19 @@ final class BuildNewsletterCommand extends Command
                     return Command::FAILURE;
                 }
 
+                $isMarkdown = TwigNewsletterRenderer::FORMAT_MARKDOWN === $format;
                 $publishers[] = new GithubDiscussionPublisher(
                     HttpClient::create(),
                     $repository,
                     $discussionCategory,
                     $token,
+                    $isMarkdown,
                 );
             }
 
+            $fileExtension = TwigNewsletterRenderer::FORMAT_MARKDOWN === $format ? 'md' : 'html';
             if (null !== $archiveDir) {
-                $publishers[] = new FileNewsletterArchiver($archiveDir);
+                $publishers[] = new FileNewsletterArchiver($archiveDir, $fileExtension);
                 $io->text(sprintf('Archive directory: %s', $archiveDir));
             }
 
@@ -135,12 +147,13 @@ final class BuildNewsletterCommand extends Command
                 default => 'none (truncated descriptions)',
             };
             $io->text(sprintf('Brief generation: %s', $briefMode));
+            $io->text(sprintf('Output format: %s', $format));
 
             $handler = new BuildNewsletterHandler(
                 dateWindowCalculator: $dateWindowCalculator,
                 articleCollector: $articleCollector,
                 summarizer: $summarizer,
-                renderer: new TwigNewsletterRenderer($twig),
+                renderer: new TwigNewsletterRenderer($twig, $format),
                 publisher: $publisher,
             );
 
@@ -156,10 +169,11 @@ final class BuildNewsletterCommand extends Command
             }
 
             if (null !== $output) {
-                $renderer = new TwigNewsletterRenderer($twig);
-                $html = $renderer->render($result);
-                file_put_contents($output, $html);
-                $io->success(sprintf('HTML saved to %s', $output));
+                $renderer = new TwigNewsletterRenderer($twig, $format);
+                $content = $renderer->render($result);
+                file_put_contents($output, $content);
+                $formatLabel = TwigNewsletterRenderer::FORMAT_MARKDOWN === $format ? 'Markdown' : 'HTML';
+                $io->success(sprintf('%s saved to %s', $formatLabel, $output));
             }
 
             if ($dryRun) {
