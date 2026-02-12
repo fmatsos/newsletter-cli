@@ -44,6 +44,10 @@ final class BuildNewsletterCommand extends Command
         string $repository = '',
         #[Option(name: 'discussion-category', description: 'GitHub Discussion category')]
         string $discussionCategory = 'General',
+        #[Option(name: 'github-token', description: 'GitHub token for GraphQL API (or set GITHUB_TOKEN env)')]
+        ?string $githubToken = null,
+        #[Option(name: 'discussion', description: 'Publish to GitHub Discussions')]
+        bool $enableDiscussion = false,
         #[Option(name: 'dry-run', description: 'Build without publishing')]
         bool $dryRun = false,
         #[Option(name: 'anthropic-api-key', description: 'Anthropic API key (or set ANTHROPIC_API_KEY env)')]
@@ -59,8 +63,10 @@ final class BuildNewsletterCommand extends Command
 
         $apiKey = $anthropicApiKey ?? (string) getenv('ANTHROPIC_API_KEY');
 
-        if (!$dryRun && null === $exportArticles && '' === $repository) {
-            $io->error('Repository is required when not in dry-run mode. Use --repository or --dry-run.');
+        $needsRepository = !$dryRun && null === $exportArticles && $enableDiscussion;
+
+        if ($needsRepository && '' === $repository) {
+            $io->error('Repository is required when publishing to GitHub Discussions. Use --repository, --no-discussion, or --dry-run.');
 
             return Command::FAILURE;
         }
@@ -87,9 +93,21 @@ final class BuildNewsletterCommand extends Command
             }
 
             $publishers = [];
+            $token = $githubToken ?? (string) getenv('GITHUB_TOKEN');
 
-            if (!$dryRun) {
-                $publishers[] = new GithubDiscussionPublisher($repository, $discussionCategory);
+            if ($enableDiscussion && !$dryRun) {
+                if ('' === trim($token)) {
+                    $io->error('GitHub token is required when publishing discussions. Set --github-token or the GITHUB_TOKEN env var.');
+
+                    return Command::FAILURE;
+                }
+
+                $publishers[] = new GithubDiscussionPublisher(
+                    HttpClient::create(),
+                    $repository,
+                    $discussionCategory,
+                    $token,
+                );
             }
 
             if (null !== $archiveDir) {

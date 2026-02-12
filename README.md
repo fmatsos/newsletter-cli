@@ -48,11 +48,13 @@ Le fichier `.dist` contient la configuration de référence (catégories, flux R
 | Secret | Description |
 |---|---|
 | `ANTHROPIC_API_KEY` | Clé API Anthropic pour les résumés via Claude |
+| `GITHUB_TOKEN` | Token GitHub (`discussions:write`) pour les appels GraphQL vers les discussions |
 
 ## Prérequis GitHub
 
-- **Discussions** activées sur le repository
+- **Discussions** activées sur le repository (publication via GraphQL)
 - Une catégorie de discussion (par défaut : `General`)
+- Un token GitHub (`discussions:write`) via `GITHUB_TOKEN` ou `--github-token`
 
 ## Build PHAR
 
@@ -89,6 +91,8 @@ composer install
 php bin/console newsletter:build --dry-run --output=newsletter.html -v
 ```
 
+Par défaut la création de discussion est désactivée : passez `--discussion` et `--github-token` (ou `GITHUB_TOKEN`) pour publier en plus de générer la newsletter locale.
+
 Ou avec le PHAR :
 
 ```bash
@@ -110,7 +114,7 @@ Le workflow `newsletter.yml` s'exécute automatiquement du lundi au vendredi à 
 3. Filtre les articles récents (jour précédent, ou vendredi-dimanche le lundi)
 4. Génère des résumés en français via l'API Claude
 5. Construit le HTML de la newsletter avec Twig
-6. Publie une Discussion GitHub avec le label `newsletter`
+6. Publie une Discussion GitHub avec le label `newsletter` (optionnel : `--discussion`, par défaut désactivé)
 7. Archive le fichier HTML dans `newsletters/`
 8. Commit automatique de l'archive
 
