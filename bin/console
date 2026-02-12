@@ -6,9 +6,11 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Akawaka\Newsletter\Infrastructure\Console\BuildNewsletterCommand;
+use Akawaka\Newsletter\Infrastructure\Console\InitCommand;
 use Symfony\Component\Console\Application;
 
-$application = new Application('Akawaka Newsletter CLI', '1.0.0');
+$application = new Application('Akawaka Newsletter CLI', '1.1.0');
 $application->add(new BuildNewsletterCommand());
+$application->add(new InitCommand());
 $application->setDefaultCommand('newsletter:build', true);
 $application->run();

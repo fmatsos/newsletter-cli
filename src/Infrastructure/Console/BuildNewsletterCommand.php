@@ -36,8 +36,8 @@ final class BuildNewsletterCommand extends Command
         SymfonyStyle $io,
         #[Option(description: 'Path to newsletter.yaml', shortcut: 'c')]
         string $config = 'config/newsletter.yaml',
-        #[Option(description: 'Path to templates directory', shortcut: 't')]
-        string $templates = 'templates',
+        #[Option(description: 'Path to templates directory (uses embedded templates if not specified)', shortcut: 't')]
+        ?string $templates = null,
         #[Option(description: 'Save output to file', shortcut: 'o')]
         ?string $output = null,
         #[Option(description: 'GitHub repository (owner/repo)', shortcut: 'r')]
@@ -133,7 +133,9 @@ final class BuildNewsletterCommand extends Command
                 default => new CompositeNewsletterPublisher($publishers),
             };
 
-            $twig = $this->createTwigEnvironment($templates);
+            // Use embedded templates if not specified
+            $templatesPath = $templates ?? InitCommand::getEmbeddedResourcesPath() . '/templates';
+            $twig = $this->createTwigEnvironment($templatesPath);
 
             $summarizer = match (true) {
                 null !== $importBriefs => new JsonBriefImporter($importBriefs),

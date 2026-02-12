@@ -2,7 +2,9 @@
     "main": "bin/console",
     "output": "dist/newsletter.phar",
     "directories": [
-        "src"
+        "src",
+        "templates",
+        "config"
     ],
     "files": [
         "composer.json",
