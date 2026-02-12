@@ -12,5 +12,4 @@ use Symfony\Component\Console\Application;
 $application = new Application('Akawaka Newsletter CLI', '1.1.0');
 $application->add(new BuildNewsletterCommand());
 $application->add(new InitCommand());
-$application->setDefaultCommand('newsletter:build');
 $application->run();

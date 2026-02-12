@@ -27,7 +27,7 @@ use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
 #[AsCommand(
-    name: 'newsletter:build',
+    name: 'build',
     description: 'Build and publish the daily tech newsletter digest',
 )]
 final class BuildNewsletterCommand extends Command
