@@ -51,7 +51,7 @@ steps:
   - name: Collect articles with Newsletter CLI
     run: |
       set -eo pipefail
-      php ./bin/newsletter.phar newsletter:build \
+      php ./bin/newsletter.phar build \
         --config=config/newsletter.yaml \
         --export-articles=articles.json \
         -v
@@ -135,7 +135,7 @@ BRIEFS_EOF
 Run the Newsletter CLI again, this time importing the generated briefs:
 
 ```bash
-php ./bin/newsletter.phar \
+php ./bin/newsletter.phar build \
   --config=config/newsletter.yaml \
   --templates=templates \
   --repository=${{ github.repository }} \
